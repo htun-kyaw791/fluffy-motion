@@ -1,0 +1,231 @@
+@import "tailwindcss";
+@import "lenis/dist/lenis.css";
+
+@theme {
+  --color-blood-950: #4a0b05;
+  --color-blood-900: #6b1109;
+  --color-blood-800: #8c1a0e;
+  --color-blood-700: #a81f12;
+  --color-blood-600: #c02718;
+
+  --color-vermilion-600: #a8281a;
+  --color-vermilion-500: #d8402f;
+  --color-vermilion-400: #e8604f;
+
+  --color-paper-50: #fdf6f2;
+  --color-paper-100: #f7e6e0;
+
+  --color-rose-200: #f0c4ba;
+  --color-rose-400: #d99a8c;
+
+  --color-earth-700: #5c1409;
+  --color-earth-900: #2a0a05;
+
+  --color-ink-950: #0b0b0d;
+  --color-ink-800: #1c1c21;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Mirrors EASE / DURATION in lib/motion.ts. */
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 300ms;
+  --duration-base: 600ms;
+  --duration-slow: 1000ms;
+}
+
+:root {
+  --u: min(1vh, 1vw);
+  --horizon: 20vh;
+}
+
+@media (max-aspect-ratio: 4 / 5) {
+  :root {
+    --horizon: 38vh;
+  }
+}
+
+html {
+  background-color: var(--color-blood-900);
+  -webkit-text-size-adjust: 100%;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+/* clip, not hidden — hidden creates a scroll container and breaks the pin. */
+html,
+body {
+  overflow-x: clip;
+}
+
+body {
+  background-color: var(--color-blood-900);
+  color: var(--color-paper-50);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: var(--color-paper-50);
+  color: var(--color-blood-900);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-paper-50);
+  outline-offset: 3px;
+}
+
+.texture {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Idle swell under the preloader's entrance. 0% and 100% are identity, so the
+   blanket reduced-motion rule parks it somewhere legible with no override. */
+@keyframes crest-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.045);
+  }
+}
+
+.crest-breathe {
+  animation: crest-breathe 4.2s ease-in-out infinite;
+}
+
+/* Sprite gait: 4 frames in a strip 4x the window width, stepped by exactly its
+   own width. steps(4) samples at 0/25/50/75% — one frame each, never between. */
+@keyframes gait {
+  to {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+.gait-strip {
+  animation: gait var(--cycle) steps(4) infinite;
+}
+
+/* Ground travel, separate from stride so the two tune independently. */
+@keyframes run-across {
+  from {
+    transform: translate3d(-25vw, 0, 0);
+  }
+  to {
+    transform: translate3d(125vw, 0, 0);
+  }
+}
+
+.runner {
+  animation: run-across var(--cross) linear var(--run-delay) infinite;
+}
+
+@keyframes relic-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate3d(calc(var(--amp) * 0.9vh), calc(var(--amp) * -1.4vh), 0)
+      rotate(calc(var(--amp) * 2.5deg));
+  }
+  50% {
+    transform: translate3d(calc(var(--amp) * -0.6vh), calc(var(--amp) * -2.1vh), 0)
+      rotate(calc(var(--amp) * -1.5deg));
+  }
+  75% {
+    transform: translate3d(calc(var(--amp) * -1.2vh), calc(var(--amp) * -0.8vh), 0)
+      rotate(calc(var(--amp) * 1.2deg));
+  }
+}
+
+.relic-drift {
+  animation: relic-drift var(--drift) ease-in-out var(--drift-delay) infinite;
+}
+
+.track-spacer {
+  /* Scroll budget, not travel distance. */
+  height: calc(var(--panels) * var(--panel-scroll));
+}
+
+.track-viewport {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.track-strip {
+  display: flex;
+  width: calc(var(--panels) * 100vw);
+  height: 100%;
+  pointer-events: none;
+}
+
+.track-panel {
+  flex-shrink: 0;
+  width: 100vw;
+  height: 100%;
+}
+
+.parallax-layer {
+  width: var(--layer-w);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* The blanket rule would freeze these on their last frame. Park them
+     somewhere legible instead. */
+  .gait-strip {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .runner {
+    animation: none !important;
+    transform: translate3d(28vw, 0, 0) !important;
+  }
+  
+  .track-spacer {
+    height: auto !important;
+  }
+
+  .track-viewport {
+    position: static !important;
+    height: auto !important;
+  }
+
+  .track-strip {
+    flex-direction: column !important;
+    width: 100% !important;
+    transform: none !important;
+    translate: none !important;
+  }
+
+  .track-panel {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100vh;
+  }
+
+  .parallax-layer {
+    width: 100% !important;
+    transform: none !important;
+    translate: none !important;
+  }
+}
