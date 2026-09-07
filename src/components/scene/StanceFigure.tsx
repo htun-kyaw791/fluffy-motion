@@ -98,17 +98,17 @@ export function StanceFigure({
         width: u(stance.h * stance.aspect),
       }}
     >
-      {stance.frames.map((src, j) =>
-        Math.abs(j - shown) <= 1 ? (
-          <SceneImage
-            key={src}
-            src={src}
-            loading="eager"
-            className="absolute inset-0 h-full w-full object-contain object-bottom transition-opacity duration-100"
-            style={{ opacity: j === shown ? 1 : 0 }}
-          />
-        ) : null,
-      )}
+      <div className="h-full w-full overflow-hidden">
+        <SceneImage
+          src={stance.sheet}
+          loading="eager"
+          className="h-full max-w-none"
+          style={{
+            width: `${n * 100}%`,
+            transform: `translate3d(${(-shown * 100) / n}%, 0, 0)`,
+          }}
+        />
+      </div>
 
       <FootLitter leaves={litter} frame={shown} />
     </div>

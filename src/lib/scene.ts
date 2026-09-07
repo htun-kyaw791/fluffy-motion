@@ -152,6 +152,7 @@ export type Stance = {
   t: number;
   h: number;
   aspect: number;
+  sheet: string;
   frames: string[];
 };
 
@@ -272,6 +273,7 @@ export const STANCES: Stance[] = [
     t: 0.5,
     h: 30,
     aspect: 1.15,
+    sheet: "/figures/fighter/sheet.svg",
     frames: [
       "/figures/fighter/nf-51.svg",
       "/figures/fighter/nf-59.svg",
@@ -295,6 +297,7 @@ export const STANCES: Stance[] = [
     t: 0.5,
     h: 34,
     aspect: 0.8706,
+    sheet: "/figures/samurai/sheet.svg",
     frames: Array.from(
       { length: 12 },
       (_, i) => `/figures/samurai/sm-${String(i + 1).padStart(2, "0")}.svg`,

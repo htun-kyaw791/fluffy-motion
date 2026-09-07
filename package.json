@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sprites": "node --experimental-strip-types scripts/build-sprites.mts"
   },
   "dependencies": {
     "lenis": "^1.3.26",
