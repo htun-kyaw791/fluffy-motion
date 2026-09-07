@@ -1,31 +1,50 @@
 "use client";
 
+import { motion, useReducedMotion, useTransform } from "motion/react";
+import { useTrack } from "@/components/motion/TrackContext";
 import { SceneImage } from "@/components/ui/SceneImage";
 import { u } from "@/lib/scene";
 import type { Lane } from "@/lib/scene";
 
 const FRAMES = [1, 2, 3, 4];
 
-/** Width / height of one frame box in the dog sets. */
 const FRAME_ASPECT = "2.06 / 1";
 
-export function GaitRunner({ gait, h, bottom, cycle, cross, delay, opacity }: Lane) {
+const PATH_START = -25; // vw
+const PATH_SPAN = 150; // vw
+
+const mod = (n: number, m: number) => ((n % m) + m) % m;
+
+export function GaitRunner({
+  gait,
+  h,
+  bottom,
+  crossSeconds,
+  cycles,
+  offset,
+  opacity,
+}: Lane) {
+  const { progress, panels, seconds } = useTrack();
+  const reduced = useReducedMotion();
+  const laps = (seconds * Math.max(1, panels - 3)) / crossSeconds;
+  const lap = useTransform(progress, (p) => offset + p * laps);
+  const x = useTransform(lap, (l) => `${PATH_START + mod(l, 1) * PATH_SPAN}vw`);
+  const strip = useTransform(lap, (l) => `${mod(Math.floor(l * cycles * 4), 4) * -25}%`);
+
   return (
-    <div
-      className="runner absolute"
+    <motion.div
+      className="absolute"
       style={{
         bottom: `calc(var(--horizon) * ${bottom})`,
         height: u(h),
         opacity,
-        ["--cross" as string]: `${cross}s`,
-        ["--run-delay" as string]: `${delay}s`,
+        x: reduced ? "28vw" : x,
       }}
     >
       <div className="h-full overflow-hidden" style={{ aspectRatio: FRAME_ASPECT }}>
-        {/* 4 frames in a strip 4x the window width; steps(4) lands on each. */}
-        <div
-          className="gait-strip flex h-full"
-          style={{ width: "400%", ["--cycle" as string]: `${cycle}s` }}
+        <motion.div
+          className="flex h-full"
+          style={{ width: "400%", x: reduced ? "0%" : strip }}
         >
           {FRAMES.map((f) => (
             <SceneImage
@@ -35,8 +54,8 @@ export function GaitRunner({ gait, h, bottom, cycle, cross, delay, opacity }: La
               className="h-full w-1/4 shrink-0 object-contain"
             />
           ))}
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

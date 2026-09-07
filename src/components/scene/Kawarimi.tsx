@@ -4,15 +4,13 @@ import { useTransform } from "motion/react";
 import { useTrack } from "@/components/motion/TrackContext";
 import { MotionSceneImage } from "@/components/ui/SceneImage";
 import { ramp } from "@/lib/motion";
-import { u, zoneX } from "@/lib/scene";
+import { centerAt, u, zoneX } from "@/lib/scene";
 import type { Vanisher } from "@/lib/scene";
 
 export function Kawarimi({ v, depth }: { v: Vanisher; depth: number }) {
   const { progress, panels } = useTrack();
 
-  const travel = (panels - 1) * 100 * depth;
-  const xVw = (travel * v.scene) / (panels - 1) + v.t * 100;
-  const c = Math.min(Math.max((xVw - 50) / travel, 0.12), 0.88);
+  const c = Math.min(Math.max(centerAt(depth, panels, v.scene, v.t), 0.12), 0.88);
 
   const ninjaOpacity = useTransform(progress, (p) => 1 - ramp(p, c - 0.004, c + 0.006));
   const smokeOpacity = useTransform(progress, [c - 0.006, c + 0.012, c + 0.042], [0, 0.85, 0]);

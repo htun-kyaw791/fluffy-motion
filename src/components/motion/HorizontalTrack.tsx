@@ -1,18 +1,28 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "motion/react";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import type { ReactNode } from "react";
+import { beats } from "@/lib/scene";
 import { TrackContext } from "./TrackContext";
+import { useTrackSnap } from "./useTrackSnap";
 
 export function HorizontalTrack({
   panels,
-  scrollPerPanel = 165,
+  scrollPerPanel = 800,
+  snap = true,
+  snapSeconds = 10,
+  snapBackSeconds = 1.2,
+  magnet,
   backdrop,
   children,
 }: {
   panels: number;
   scrollPerPanel?: number;
+  snap?: boolean;
+  snapSeconds?: number;
+  snapBackSeconds?: number;
+  magnet?: number;
   backdrop?: ReactNode;
   children: ReactNode;
 }) {
@@ -28,8 +38,17 @@ export function HorizontalTrack({
     `-${((panels - 1) / panels) * 100}%`,
   ]);
 
+  const targets = useMemo(() => (snap ? beats(panels) : []), [snap, panels]);
+
+  useTrackSnap(ref, {
+    targets,
+    seconds: snapSeconds,
+    backSeconds: snapBackSeconds,
+    magnet,
+  });
+
   return (
-    <TrackContext.Provider value={{ progress: scrollYProgress, panels }}>
+    <TrackContext.Provider value={{ progress: scrollYProgress, panels, seconds: snapSeconds }}>
       <section
         ref={ref}
         className="track-spacer"

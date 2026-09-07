@@ -1,7 +1,7 @@
 "use client";
 
 import { useMotionValueEvent, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTrack } from "@/components/motion/TrackContext";
 import { MotionSceneImage, SceneImage } from "@/components/ui/SceneImage";
 import { FLOAT } from "@/lib/motion";
@@ -10,6 +10,7 @@ import type { Leaf, Stance } from "@/lib/scene";
 
 const KICK = 55;
 const LIFT = 85;
+const FRAME_MS = 90;
 
 function FootLitter({ leaves, frame }: { leaves: Leaf[]; frame: number }) {
   const reduced = useReducedMotion();
@@ -49,17 +50,44 @@ function FootLitter({ leaves, frame }: { leaves: Leaf[]; frame: number }) {
   );
 }
 
-export function StanceFigure({ stance, litter }: { stance: Stance; litter: Leaf[] }) {
+export function StanceFigure({
+  stance,
+  litter,
+  play = true,
+}: {
+  stance: Stance;
+  litter: Leaf[];
+  play?: boolean;
+}) {
   const { progress, panels } = useTrack();
+  const reduced = useReducedMotion();
   const [i, setI] = useState(0);
   const n = stance.frames.length;
   const { from, to } = stanceWindow(DEPTH.stance, panels, stance.scene, stance.t);
 
+  const scrollDriven = to > from;
+
   useMotionValueEvent(progress, "change", (p) => {
+    if (!scrollDriven) return;
     const span = (p - from) / (to - from);
     const next = Math.min(n - 1, Math.max(0, Math.floor(span * n)));
     setI((prev) => (prev === next ? prev : next));
   });
+
+  useEffect(() => {
+    if (scrollDriven || !play || reduced) return;
+
+    let frame = 0;
+    const id = setInterval(() => {
+      frame += 1;
+      setI(frame);
+      if (frame >= n - 1) clearInterval(id);
+    }, FRAME_MS);
+
+    return () => clearInterval(id);
+  }, [scrollDriven, play, reduced, n]);
+
+  const shown = !scrollDriven && reduced ? n - 1 : i;
 
   return (
     <div
@@ -71,18 +99,18 @@ export function StanceFigure({ stance, litter }: { stance: Stance; litter: Leaf[
       }}
     >
       {stance.frames.map((src, j) =>
-        Math.abs(j - i) <= 1 ? (
+        Math.abs(j - shown) <= 1 ? (
           <SceneImage
             key={src}
             src={src}
             loading="eager"
             className="absolute inset-0 h-full w-full object-contain object-bottom transition-opacity duration-100"
-            style={{ opacity: j === i ? 1 : 0 }}
+            style={{ opacity: j === shown ? 1 : 0 }}
           />
         ) : null,
       )}
 
-      <FootLitter leaves={litter} frame={i} />
+      <FootLitter leaves={litter} frame={shown} />
     </div>
   );
 }

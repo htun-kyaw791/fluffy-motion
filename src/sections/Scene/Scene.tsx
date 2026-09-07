@@ -1,23 +1,22 @@
 "use client";
 
-import { Bubble } from "@/components/motion/Bubble";
+import { motion } from "motion/react";
 import { GaitRunner } from "@/components/motion/GaitRunner";
 import { ParallaxLayer } from "@/components/motion/ParallaxLayer";
+import { PhaseStack, usePhase } from "@/components/motion/PhaseStack";
 import { GrassBand, LeafLitter } from "@/components/scene/Ground";
 import { Kawarimi } from "@/components/scene/Kawarimi";
 import { Relics } from "@/components/scene/Relics";
+import { Clouds, Moon, Sun } from "@/components/scene/Sky";
 import { StanceFigure } from "@/components/scene/StanceFigure";
 import { Structures } from "@/components/scene/Structures";
-import { SceneImage } from "@/components/ui/SceneImage";
 import {
-  CLOUDS,
   DEPTH,
   FAR_BUILDINGS,
   HORIZON,
   LANES,
   NEAR_BUILDINGS,
   STANCES,
-  SUN,
   VANISHERS,
   grassClumps,
   leafScatter,
@@ -36,52 +35,52 @@ const WIND = { far: 2, mid: 4.5, near: 8 };
 
 const FOOT_LEAVES = [leafScatter(211, 8, 1.3, 2.5), leafScatter(307, 8, 1.3, 2.5)];
 
-export function Scene() {
+export function Scene({ ready = true }: { ready?: boolean }) {
+  const tint = usePhase((p) => p.tint);
+  const texture = usePhase((p) => p.texture);
+  const vignette = usePhase((p) => p.vignette);
+
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 bg-linear-to-b from-blood-950 via-blood-800 to-blood-700" />
-      <div
-        className="texture absolute inset-0 opacity-40 mix-blend-multiply"
-        style={{ backgroundImage: "url(/bg/wall.webp)" }}
+      <PhaseStack pick={(p) => p.sky} className="absolute inset-0 bg-linear-to-b" />
+
+      <motion.div
+        aria-hidden
+        className="texture absolute inset-0 mix-blend-multiply"
+        style={{ backgroundImage: "url(/bg/wall.webp)", opacity: texture }}
       />
 
       <ParallaxLayer depth={DEPTH.sun}>
-        <Bubble
-          lens={0.8}
-          className="absolute opacity-70"
-          style={{ left: `${SUN.left}%`, top: `${SUN.top}vh`, height: u(SUN.h) }}
-        >
-          <SceneImage src="/scene/sun.svg" loading="eager" className="h-full w-auto max-w-none" />
-        </Bubble>
+        <Sun />
+        <Moon />
       </ParallaxLayer>
 
       <ParallaxLayer depth={DEPTH.clouds}>
-        {CLOUDS.map((c, i) => (
-          <Bubble
-            key={i}
-            lens={0.95}
-            bulge={0.1}
-            className="absolute opacity-20"
-            style={{ left: `${c.x}%`, top: `${c.y}vh`, height: u(c.h) }}
-          >
-            <SceneImage src={c.src} className="h-full w-auto max-w-none" />
-          </Bubble>
-        ))}
+        <Clouds />
       </ParallaxLayer>
 
-      <ParallaxLayer depth={DEPTH.far} band={{ bottom: HORIZON, height: "42vh" }}>
-        <Structures items={FAR_BUILDINGS} depth={DEPTH.far} opacity={0.58} />
+      <ParallaxLayer
+        depth={DEPTH.far}
+        band={{ bottom: HORIZON, height: "42vh" }}
+        style={{ filter: tint }}
+      >
+        <Structures items={FAR_BUILDINGS} depth={DEPTH.far} opacity={0.88} />
       </ParallaxLayer>
 
-      <ParallaxLayer depth={DEPTH.near} band={{ bottom: HORIZON, height: "30vh" }}>
+      <ParallaxLayer
+        depth={DEPTH.near}
+        band={{ bottom: HORIZON, height: "30vh" }}
+        style={{ filter: tint }}
+      >
         <Structures items={NEAR_BUILDINGS} depth={DEPTH.near} opacity={1} />
         {VANISHERS.map((v, i) => (
           <Kawarimi key={i} v={v} depth={DEPTH.near} />
         ))}
       </ParallaxLayer>
 
-      <div
-        className="absolute inset-x-0 bottom-0 bg-linear-to-b from-earth-700 to-earth-900"
+      <PhaseStack
+        pick={(p) => p.ground}
+        className="absolute inset-x-0 bottom-0 bg-linear-to-b"
         style={{ height: HORIZON }}
       />
 
@@ -111,6 +110,7 @@ export function Scene() {
             key={st.frames[0]}
             stance={st}
             litter={FOOT_LEAVES[i % FOOT_LEAVES.length]}
+            play={ready}
           />
         ))}
       </ParallaxLayer>
@@ -140,11 +140,15 @@ export function Scene() {
         <GrassBand heightVh={8} clumps={NEAR_CLUMPS} />
       </ParallaxLayer>
 
-      <ParallaxLayer depth={DEPTH.sun}>
+      <motion.div
+        aria-hidden
+        className="absolute inset-0 bg-linear-to-r from-blood-950 via-transparent to-blood-950"
+        style={{ opacity: vignette }}
+      />
+      
+      <ParallaxLayer depth={DEPTH.sun} style={{ filter: "brightness(1.35) saturate(1.1)" }}>
         <Relics />
       </ParallaxLayer>
-
-      <div className="absolute inset-0 bg-linear-to-r from-blood-950/60 via-transparent to-blood-950/50" />
     </div>
   );
 }

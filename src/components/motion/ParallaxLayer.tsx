@@ -1,7 +1,9 @@
 "use client";
 
 import { motion, useTransform } from "motion/react";
-import type { CSSProperties, ReactNode } from "react";
+import type { MotionStyle } from "motion/react";
+import type { ReactNode } from "react";
+import { layerTravel } from "@/lib/scene";
 import { useTrack } from "./TrackContext";
 
 type Band = { bottom: string; height: string };
@@ -17,11 +19,11 @@ export function ParallaxLayer({
   band?: Band;
   children: ReactNode;
   className?: string;
-  style?: CSSProperties;
+  style?: MotionStyle;
 }) {
   const { progress, panels } = useTrack();
 
-  const travel = (panels - 1) * 100 * depth; // vw
+  const travel = layerTravel(depth, panels); // vw
   const width = 100 + travel;
   const shift = (travel / width) * 100;
 

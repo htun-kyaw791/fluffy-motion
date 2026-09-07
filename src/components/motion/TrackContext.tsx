@@ -6,6 +6,7 @@ import type { MotionValue } from "motion/react";
 type TrackValue = {
   progress: MotionValue<number>;
   panels: number;
+  seconds: number;
 };
 
 export const TrackContext = createContext<TrackValue | null>(null);

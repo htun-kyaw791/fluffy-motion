@@ -9,7 +9,6 @@ function rng(seed: number): () => number {
 export const u = (n: number) => `calc(${n} * var(--u))`;
 
 export const ASPECT = {
-  sun: 1.0124,
   grass: 12.093,
 } as const;
 
@@ -17,11 +16,13 @@ export const HORIZON = "var(--horizon)";
 
 export type Depth = number;
 
-type Cloud = {
+export type Cloud = {
   src: string;
   x: number;
   y: number;
   h: number;
+  drift: number;
+  sink: number;
 };
 
 
@@ -44,11 +45,16 @@ export type Placed = {
   flip?: boolean;
 };
 
+export function layerTravel(depth: Depth, panels: number): number {
+  return (panels - 1) * 100 * depth;
+}
+
+function placedX(depth: Depth, panels: number, scene: number, t: number): number {
+  return (layerTravel(depth, panels) * scene) / (panels - 1) + t * 100;
+}
+
 export function zoneX(depth: Depth, panels: number, scene: number, t: number): number {
-  const travel = (panels - 1) * 100 * depth;
-  const width = 100 + travel;
-  const start = (travel * scene) / (panels - 1);
-  return ((start + t * 100) / width) * 100;
+  return (placedX(depth, panels, scene, t) / (100 + layerTravel(depth, panels))) * 100;
 }
 
 export const FAR_BUILDINGS: Placed[] = [
@@ -81,16 +87,65 @@ export const NEAR_BUILDINGS: Placed[] = [
 ];
 
 export const CLOUDS: Cloud[] = [
-  { src: "/scene/cloud-04.svg", x: 4, y: 9, h: 9 },
-  { src: "/scene/cloud-07.svg", x: 21, y: 21, h: 3 },
-  { src: "/scene/cloud-02.svg", x: 33, y: 5, h: 7 },
-  { src: "/scene/cloud-12.svg", x: 47, y: 27, h: 4 },
-  { src: "/scene/cloud-08.svg", x: 56, y: 13, h: 8 },
-  { src: "/scene/cloud-11.svg", x: 71, y: 24, h: 4 },
-  { src: "/scene/cloud-06.svg", x: 82, y: 7, h: 7 },
-  { src: "/scene/cloud-14.svg", x: 93, y: 19, h: 4 },
+  { src: "/scene/cloud-04.svg", x: 2, y: 7, h: 9, drift: -7.5, sink: 15 },
+  { src: "/scene/cloud-07.svg", x: 11, y: 19, h: 3, drift: -2.4, sink: 7 },
+  { src: "/scene/cloud-02.svg", x: 19, y: 4, h: 7, drift: -5.8, sink: 13 },
+  { src: "/scene/cloud-11.svg", x: 26, y: 27, h: 4, drift: -3.1, sink: 9 },
+  { src: "/scene/cloud-08.svg", x: 33, y: 12, h: 8, drift: -6.6, sink: 14 },
+  { src: "/scene/cloud-14.svg", x: 40, y: 24, h: 4, drift: -2.9, sink: 8 },
+  { src: "/scene/cloud-06.svg", x: 47, y: 6, h: 7, drift: -5.2, sink: 12 },
+  { src: "/scene/cloud-12.svg", x: 54, y: 30, h: 4, drift: -3.4, sink: 10 },
+  { src: "/scene/cloud-02.svg", x: 60, y: 15, h: 6, drift: -4.7, sink: 11 },
+  { src: "/scene/cloud-07.svg", x: 67, y: 3, h: 5, drift: -6.1, sink: 13 },
+  { src: "/scene/cloud-11.svg", x: 73, y: 22, h: 3, drift: -2.2, sink: 7 },
+  { src: "/scene/cloud-04.svg", x: 79, y: 9, h: 8, drift: -6.9, sink: 14 },
+  { src: "/scene/cloud-14.svg", x: 85, y: 28, h: 4, drift: -3.6, sink: 9 },
+  { src: "/scene/cloud-08.svg", x: 91, y: 17, h: 7, drift: -5.5, sink: 12 },
+  { src: "/scene/cloud-06.svg", x: 96, y: 5, h: 6, drift: -4.2, sink: 11 },
+  { src: "/scene/cloud-12.svg", x: 15, y: 33, h: 3, drift: -2.6, sink: 6 },
+  { src: "/scene/cloud-02.svg", x: 44, y: 34, h: 3, drift: -2.8, sink: 6 },
+  { src: "/scene/cloud-06.svg", x: 88, y: 36, h: 3, drift: -2.5, sink: 5 },
 ];
 
+export type Phase = {
+  at: number;
+  sky: string;
+  ground: string;
+  tint: string;
+  texture: number;
+  vignette: number;
+  cloud: number;
+};
+
+export const PHASES: Phase[] = [
+  {
+    at: 0,
+    sky: "from-day-300 via-day-200 to-day-100",
+    ground: "from-land-400 to-land-600",
+    tint: "brightness(1) saturate(1)",
+    texture: 0.1,
+    vignette: 0.12,
+    cloud: 0.62,
+  },
+  {
+    at: 0.5,
+    sky: "from-blood-900 via-vermilion-500 to-dusk-500",
+    ground: "from-earth-700 to-earth-900",
+    tint: "brightness(0.78) saturate(1.2)",
+    texture: 0.34,
+    vignette: 0.5,
+    cloud: 0.34,
+  },
+  {
+    at: 1,
+    sky: "from-night-900 via-night-800 to-blood-950",
+    ground: "from-ink-950 to-night-900",
+    tint: "brightness(0.42) saturate(0.7)",
+    texture: 0.4,
+    vignette: 0.62,
+    cloud: 0.26,
+  },
+];
 
 export type Stance = {
   scene: number;
@@ -100,18 +155,27 @@ export type Stance = {
   frames: string[];
 };
 
+export function centerAt(depth: Depth, panels: number, scene: number, t: number): number {
+  return (placedX(depth, panels, scene, t) - 50) / layerTravel(depth, panels);
+}
+
 export function stanceWindow(
   depth: Depth,
   panels: number,
   scene: number,
   t: number,
 ): { from: number; to: number } {
-  const travel = (panels - 1) * 100 * depth;
-  const xVw = (travel * scene) / (panels - 1) + t * 100;
+  const travel = layerTravel(depth, panels);
+  const x = placedX(depth, panels, scene, t);
   return {
-    from: Math.max(0, (xVw - 100) / travel),
-    to: Math.min(1, xVw / travel),
+    from: Math.max(0, (x - 100) / travel),
+    to: Math.min(1, (x - 50) / travel),
   };
+}
+
+export function beats(panels: number): number[] {
+  if (panels < 2) return [0];
+  return Array.from({ length: panels }, (_, i) => i / (panels - 1));
 }
 
 export const LEAVES: string[] = Array.from(
@@ -156,7 +220,17 @@ export const SUN = {
   left: 62,
   top: 8,
   h: 26,
-  aspect: ASPECT.sun,
+  arc: { dx: -10, dy: 55 },
+  fade: { from: 0.5, to: 0.78 },
+  warm: { from: 0.12, to: 0.46 },
+} as const;
+
+export const MOON = {
+  left: 58,
+  top: 13,
+  h: 22,
+  drop: 48,
+  enter: { from: 0.58, to: 1 },
 } as const;
 
 
@@ -172,7 +246,7 @@ export type Relic = {
   amp: number;
 };
 
-export const RELIC_WINDOW = { from: 0.55, to: 0.95 } as const;
+export const RELIC_WINDOW = { from: 0.6, to: 1.0 } as const;
 
 export const RELIC_SPAN = 0.16;
 
@@ -190,10 +264,12 @@ export const RELICS: Relic[] = [
   { src: "/figures/relics/relic-14.webp", dx: 30, dy: 42, h: 9, spin: 28, delay: 0.5, drift: 9.9, driftDelay: -5.9, amp: 1.05 },
 ];
 
+export const RELIC_DELAY_MAX = Math.max(...RELICS.map((r) => r.delay));
+
 export const STANCES: Stance[] = [
   {
     scene: 0,
-    t: 0.8,
+    t: 0.5,
     h: 30,
     aspect: 1.15,
     frames: [
@@ -216,7 +292,7 @@ export const STANCES: Stance[] = [
   },
   {
     scene: 1,
-    t: 0.85,
+    t: 0.5,
     h: 34,
     aspect: 0.8706,
     frames: Array.from(
@@ -248,17 +324,17 @@ export type Lane = {
   gait: 1 | 2 | 3;
   h: number;
   bottom: number;
-  cycle: number;
-  cross: number;
-  delay: number;
+  crossSeconds: number;
+  cycles: number;
+  offset: number;
   opacity: number;
 };
 
 export const LANES: Lane[] = [
-  { gait: 1, h: 5.5, bottom: 0.7, cycle: 0.66, cross: 31, delay: -5, opacity: 0.8 },
-  { gait: 2, h: 7, bottom: 0.625, cycle: 0.48, cross: 12, delay: -13, opacity: 0.88 },
-  { gait: 1, h: 9.5, bottom: 0.55, cycle: 0.56, cross: 25, delay: -7, opacity: 0.95 },
-  { gait: 3, h: 12, bottom: 0.45, cycle: 0.38, cross: 8, delay: -16, opacity: 1 },
+  { gait: 1, h: 5.5, bottom: 0.7, crossSeconds: 13, cycles: 47, offset: 0.3, opacity: 0.8 },
+  { gait: 2, h: 7, bottom: 0.625, crossSeconds: 5, cycles: 25, offset: 0.52, opacity: 0.88 },
+  { gait: 1, h: 9.5, bottom: 0.55, crossSeconds: 10.5, cycles: 45, offset: 0.18, opacity: 0.95 },
+  { gait: 3, h: 12, bottom: 0.45, crossSeconds: 3.3, cycles: 21, offset: 0.68, opacity: 1 },
 ];
 
 export type Clump = { x: number; w: number };

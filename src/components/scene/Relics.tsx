@@ -4,7 +4,7 @@ import { motion, useTransform } from "motion/react";
 import { Bubble } from "@/components/motion/Bubble";
 import { useTrack } from "@/components/motion/TrackContext";
 import { SceneImage } from "@/components/ui/SceneImage";
-import { RELICS, RELIC_SPAN, RELIC_WINDOW, SUN, u } from "@/lib/scene";
+import { MOON, RELICS, RELIC_DELAY_MAX, RELIC_SPAN, RELIC_WINDOW, u } from "@/lib/scene";
 import type { Relic as RelicData } from "@/lib/scene";
 
 
@@ -12,7 +12,8 @@ function Relic({ r }: { r: RelicData }) {
   const { progress } = useTrack();
 
   const from =
-    RELIC_WINDOW.from + r.delay * (RELIC_WINDOW.to - RELIC_WINDOW.from - RELIC_SPAN);
+    RELIC_WINDOW.from +
+    (r.delay / RELIC_DELAY_MAX) * (RELIC_WINDOW.to - RELIC_WINDOW.from - RELIC_SPAN);
   const to = from + RELIC_SPAN;
 
   const x = useTransform(progress, [from, to], ["0vw", `${r.dx}vw`]);
@@ -60,9 +61,9 @@ export function Relics() {
     <div
       className="absolute"
       style={{
-        left: `${SUN.left}%`,
-        top: `${SUN.top + SUN.h / 2}vh`,
-        marginLeft: u((SUN.h * SUN.aspect) / 2),
+        left: `${MOON.left}%`,
+        top: `${MOON.top + MOON.h / 2}vh`,
+        marginLeft: u(MOON.h / 2),
       }}
     >
       {RELICS.map((r) => (
